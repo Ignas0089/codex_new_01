@@ -91,6 +91,14 @@ describe("assembleNewsletter", () => {
     const transcriptResult = createTranscriptSynthesis();
     const generateId = jest.fn(() => `sec-${generateId.mock.calls.length + 1}`);
     const now = jest.fn(() => new Date("2024-03-01T12:00:00.000Z"));
+    const generateFreeformTopic = jest.fn(async () => ({
+      prompt: request.freeformTopicPrompt,
+      title: "Team Wins Spotlight",
+      body: "Celebrate the latest team achievements.",
+      toneGuidance: "Keep it upbeat.",
+      confidence: 0.82,
+      isPromptAligned: true,
+    }));
 
     const dateNowSpy = jest
       .spyOn(Date, "now")
@@ -105,6 +113,7 @@ describe("assembleNewsletter", () => {
         synthesizeContent: jest.fn(async () => transcriptResult),
         generateId,
         now,
+        generateFreeformTopic,
       },
     });
 
@@ -115,12 +124,29 @@ describe("assembleNewsletter", () => {
     ]);
     expect(response.sections.actionItems.items).toHaveLength(1);
     expect(response.sections.closing.title).toBe("Closing");
-    expect(response.sections.freeformTopic.title).toBe("Team Wins");
+    expect(response.sections.freeformTopic).toMatchObject({
+      title: "Team Wins Spotlight",
+      body: "Celebrate the latest team achievements.",
+      toneGuidance: "Keep it upbeat.",
+      confidence: 0.82,
+      isPromptAligned: true,
+    });
 
     expect(response.metadata).toEqual({
       createdAt: "2024-03-01T12:00:00.000Z",
       processingTimeMs: 250,
       audioSummaryIncluded: true,
+    });
+
+    expect(generateFreeformTopic).toHaveBeenCalledWith({
+      prompt: request.freeformTopicPrompt,
+      context: expect.objectContaining({
+        summary: transcriptResult.summary,
+        decisions: transcriptResult.decisions,
+        insights: transcriptResult.insights,
+        actionItems: transcriptResult.actionItems,
+        audioHighlights: audioSummary.highlights,
+      }),
     });
 
     expect(generateId).toHaveBeenCalled();
@@ -156,6 +182,7 @@ describe("assembleNewsletter", () => {
     expect(response.sections.actionItems.body).toContain("No action items were captured");
     expect(response.sections.closing.body).toContain("Thanks for reading");
     expect(response.sections.freeformTopic.title).toBe("Additional Topic");
+    expect(response.sections.freeformTopic.toneGuidance).toContain("Friendly internal tone");
     expect(response.metadata.audioSummaryIncluded).toBe(false);
   });
 

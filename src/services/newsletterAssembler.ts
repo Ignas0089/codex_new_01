@@ -2,6 +2,7 @@ import {
   ActionItem,
   ActionItemsSection,
   AudioHighlightsSummary,
+  FreeformTopicPrompt,
   FreeformTopicSuggestion,
   MeetingAudioUpload,
   MeetingRecapInput,
@@ -12,6 +13,10 @@ import {
   StructuredNewsletter,
   TranscriptSynthesisResult,
 } from "../types/newsletter";
+import { type GenerateFreeformTopic } from "./freeformTopicGenerator";
+
+const DEFAULT_FREEFORM_TONE_GUIDANCE =
+  "Friendly internal tone: highlight wins, appreciate contributors, and reinforce next steps.";
 
 type IdFactory = () => string;
 type NowFactory = () => Date;
@@ -37,6 +42,7 @@ export interface SynthesizeContent {
 export interface AssembleNewsletterDependencies {
   summarizeAudio?: SummarizeAudio;
   synthesizeContent: SynthesizeContent;
+  generateFreeformTopic?: GenerateFreeformTopic;
   generateId?: IdFactory;
   now?: NowFactory;
 }
@@ -66,11 +72,18 @@ export const assembleNewsletter = async ({
     }),
   ]);
 
+  const freeformSuggestion = await maybeGenerateFreeformTopic(dependencies.generateFreeformTopic, {
+    prompt: request.freeformTopicPrompt,
+    audioSummary,
+    transcriptSynthesis,
+  });
+
   const structured = buildStructuredNewsletter({
     request,
     audioSummary,
     transcriptSynthesis,
     generateId,
+    freeformSuggestion,
   });
 
   const createdAt = (now ?? defaultNowFactory)().toISOString();
@@ -91,6 +104,7 @@ interface BuildStructuredNewsletterArgs {
   audioSummary?: AudioHighlightsSummary;
   transcriptSynthesis: TranscriptSynthesisResult;
   generateId?: IdFactory;
+  freeformSuggestion?: FreeformTopicSuggestion;
 }
 
 const buildStructuredNewsletter = ({
@@ -98,6 +112,7 @@ const buildStructuredNewsletter = ({
   audioSummary,
   transcriptSynthesis,
   generateId,
+  freeformSuggestion,
 }: BuildStructuredNewsletterArgs): StructuredNewsletter => {
   const introduction = buildIntroductionSection({
     transcriptSynthesis,
@@ -119,10 +134,8 @@ const buildStructuredNewsletter = ({
     audioSummary,
     generateId,
   });
-  const freeformTopic = buildFreeformSuggestion({
-    promptTopic: request.freeformTopicPrompt?.topic,
-    promptInstructions: request.freeformTopicPrompt?.instructions,
-  });
+  const freeformTopic =
+    freeformSuggestion ?? buildFreeformSuggestion({ prompt: request.freeformTopicPrompt });
 
   return {
     introduction,
@@ -403,16 +416,17 @@ const formatDueDate = (isoDate: string): string => {
 };
 
 interface BuildFreeformSuggestionArgs {
-  promptTopic?: string;
-  promptInstructions?: string;
+  prompt?: FreeformTopicPrompt;
 }
 
 const buildFreeformSuggestion = ({
-  promptTopic,
-  promptInstructions,
+  prompt,
 }: BuildFreeformSuggestionArgs): FreeformTopicSuggestion => {
-  const title = promptTopic?.trim() || "Additional Topic";
-  const intro = promptInstructions?.trim();
+  const promptTopic = prompt?.topic?.trim();
+  const promptInstructions = prompt?.instructions?.trim();
+
+  const title = promptTopic || "Additional Topic";
+  const intro = promptInstructions;
 
   const bodySegments: string[] = [];
 
@@ -424,19 +438,55 @@ const buildFreeformSuggestion = ({
     "Use this space to add any announcements or highlights that didn't fit into the main sections. Update the copy as needed before sharing.",
   );
 
-  const prompt = promptTopic || promptInstructions
-    ? {
-        topic: promptTopic ?? "",
-        ...(promptInstructions ? { instructions: promptInstructions } : {}),
-      }
-    : undefined;
-
   return {
-    prompt,
+    prompt:
+      promptTopic || promptInstructions
+        ? {
+            topic: promptTopic ?? "Additional Topic",
+            ...(promptInstructions ? { instructions: promptInstructions } : {}),
+          }
+        : undefined,
     title,
     body: bodySegments.join("\n\n"),
     isPromptAligned: Boolean(promptTopic || promptInstructions),
+    toneGuidance: DEFAULT_FREEFORM_TONE_GUIDANCE,
   };
+};
+
+interface MaybeGenerateFreeformTopicArgs {
+  prompt?: FreeformTopicPrompt;
+  audioSummary?: AudioHighlightsSummary;
+  transcriptSynthesis: TranscriptSynthesisResult;
+}
+
+const maybeGenerateFreeformTopic = async (
+  generateFreeformTopic: GenerateFreeformTopic | undefined,
+  { prompt, audioSummary, transcriptSynthesis }: MaybeGenerateFreeformTopicArgs,
+): Promise<FreeformTopicSuggestion | undefined> => {
+  if (!generateFreeformTopic) {
+    return undefined;
+  }
+
+  try {
+    const suggestion = await generateFreeformTopic({
+      prompt,
+      context: {
+        summary: transcriptSynthesis.summary,
+        decisions: transcriptSynthesis.decisions,
+        insights: transcriptSynthesis.insights,
+        actionItems: transcriptSynthesis.actionItems,
+        audioHighlights: audioSummary?.highlights,
+      },
+    });
+
+    return {
+      ...suggestion,
+      toneGuidance: suggestion.toneGuidance?.trim() || DEFAULT_FREEFORM_TONE_GUIDANCE,
+    };
+  } catch (error) {
+    console.warn("Failed to generate freeform topic suggestion", error);
+    return undefined;
+  }
 };
 
 const maybeSummarizeAudio = async (

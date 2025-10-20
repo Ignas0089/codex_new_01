@@ -36,9 +36,9 @@
   - [x] 3.3 Add tests validating section ordering, fallback behavior when an input is missing, and overall response shape.
 
 - [ ] 4.0 Generate and refine freeform topic suggestions
-  - [ ] 4.1 Implement `freeformTopicGenerator` that accepts an optional user prompt and produces editable AI copy with tone guidance for internal readers.
-  - [ ] 4.2 Integrate the generator into the assembler so the response always includes a suggested freeform section with metadata for edits.
-  - [ ] 4.3 Cover edge cases in unit tests (missing prompt, short prompt, need for tone reminders).
+  - [x] 4.1 Implement `freeformTopicGenerator` that accepts an optional user prompt and produces editable AI copy with tone guidance for internal readers.
+  - [x] 4.2 Integrate the generator into the assembler so the response always includes a suggested freeform section with metadata for edits.
+  - [x] 4.3 Cover edge cases in unit tests (missing prompt, short prompt, need for tone reminders).
 
 - [ ] 5.0 Build the user interface for upload, preview, and editing
   - [ ] 5.1 Create `NewsletterGeneratorPage` with inputs for audio upload, recap text, transcript text, and optional freeform topic prompt.
