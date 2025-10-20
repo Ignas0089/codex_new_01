@@ -31,7 +31,7 @@
   - [x] 2.3 Write unit tests for both services to cover typical meetings, long transcripts, and invalid inputs.
 
 - [ ] 3.0 Assemble structured newsletter output
-  - [ ] 3.1 Implement `newsletterAssembler` orchestrator that merges audio highlights and synthesized text into the Introduction/Main Updates/Action Items/Closing sections.
+  - [x] 3.1 Implement `newsletterAssembler` orchestrator that merges audio highlights and synthesized text into the Introduction/Main Updates/Action Items/Closing sections.
   - [ ] 3.2 Ensure action items are formatted as bullet lists and include owners/deadlines when available in the source content.
   - [ ] 3.3 Add tests validating section ordering, fallback behavior when an input is missing, and overall response shape.
 
