@@ -26,7 +26,7 @@
   - [x] 1.3 Add request/response schemas (e.g., Zod or similar) to enforce payload shape and surface helpful validation errors to the UI.
 
 - [ ] 2.0 Implement audio and text summarization services
-  - [ ] 2.1 Build `audioSummarizer` to extract concise highlight snippets from the uploaded audio while respecting size limits and handling failure cases.
+  - [x] 2.1 Build `audioSummarizer` to extract concise highlight snippets from the uploaded audio while respecting size limits and handling failure cases.
   - [ ] 2.2 Create `transcriptSynthesizer` helpers that align transcript + written recap content, pulling out decisions, context, and action items.
   - [ ] 2.3 Write unit tests for both services to cover typical meetings, long transcripts, and invalid inputs.
 

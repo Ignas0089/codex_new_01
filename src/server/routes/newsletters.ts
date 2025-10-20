@@ -32,6 +32,7 @@ const toUploadedFileDescriptor = (
   mimetype: file.mimetype,
   originalname: file.originalname,
   size: file.size,
+  buffer: file.buffer ? new Uint8Array(file.buffer) : undefined,
 });
 
 const newslettersRouter = Router();

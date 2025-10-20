@@ -10,6 +10,29 @@ export const SUPPORTED_AUDIO_MIME_TYPES = ["audio/mpeg", "audio/wav"] as const;
 
 export type AudioMimeType = (typeof SUPPORTED_AUDIO_MIME_TYPES)[number];
 
+export interface AudioHighlight {
+  id: string;
+  summary: string;
+  /** Optional start timestamp in seconds for the highlight clip. */
+  startTimeSeconds?: number;
+  /** Optional end timestamp in seconds for the highlight clip. */
+  endTimeSeconds?: number;
+  /** Model-provided confidence between 0-1. */
+  confidence?: number;
+  /** Optional tags or topics associated with the highlight. */
+  topics?: string[];
+}
+
+export interface AudioHighlightsSummary {
+  transcript: string;
+  highlights: AudioHighlight[];
+  durationSeconds: number;
+  /** Metadata about the processed audio source. */
+  source: Pick<MeetingAudioUpload, "filename" | "mimeType" | "sizeBytes">;
+  /** Any non-fatal issues encountered while summarizing. */
+  warnings?: string[];
+}
+
 export interface MeetingAudioUpload {
   filename: string;
   mimeType: AudioMimeType;
