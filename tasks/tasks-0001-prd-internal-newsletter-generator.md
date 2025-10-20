@@ -23,7 +23,7 @@
 - [ ] 1.0 Establish backend contracts and validation
   - [x] 1.1 Define newsletter domain types for inputs, generated sections, and freeform suggestions in `src/types/newsletter.ts`.
   - [x] 1.2 Implement upload/validation logic in the newsletters route to accept MP3/WAV files up to 60 minutes, meeting recap text, and transcript text. (Validator helper created in `src/services/validation/newsletterUploadValidator.ts`.)
-  - [ ] 1.3 Add request/response schemas (e.g., Zod or similar) to enforce payload shape and surface helpful validation errors to the UI.
+  - [x] 1.3 Add request/response schemas (e.g., Zod or similar) to enforce payload shape and surface helpful validation errors to the UI.
 
 - [ ] 2.0 Implement audio and text summarization services
   - [ ] 2.1 Build `audioSummarizer` to extract concise highlight snippets from the uploaded audio while respecting size limits and handling failure cases.
