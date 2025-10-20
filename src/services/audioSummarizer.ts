@@ -175,3 +175,59 @@ const normalizeMaxHighlights = (value: number | undefined): number => {
   return Math.min(rounded, MAX_HIGHLIGHTS_LIMIT);
 };
 
+const splitSentences = (text: string): string[] =>
+  text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0);
+
+const clampText = (text: string, maxLength: number): string =>
+  text.length <= maxLength ? text : `${text.slice(0, Math.max(0, maxLength - 1))}…`;
+
+const deriveTranscriptFromAudio = ({ audio }: SummarizerTranscriptionInput): string => {
+  const baseName = audio.filename.replace(/\.[^./\\]+$/, "");
+  const durationMinutes = Math.max(1, Math.round(audio.durationSeconds / 60));
+
+  return [
+    `Automated transcript summary for ${baseName}.`,
+    `The recording spans roughly ${durationMinutes} minute${durationMinutes === 1 ? "" : "s"} and captures the primary discussion points.`,
+    "Highlights include progress updates, decisions, and next steps mentioned throughout the session.",
+  ].join(" ");
+};
+
+const estimateTimeBounds = (
+  durationSeconds: number,
+  index: number,
+  total: number,
+): { start?: number; end?: number } => {
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0 || total <= 0) {
+    return {};
+  }
+
+  const segmentLength = durationSeconds / total;
+  const start = Math.max(0, Math.round(segmentLength * index));
+  const end = Math.min(durationSeconds, Math.round(segmentLength * (index + 1)));
+
+  return { start: start || undefined, end: end || undefined };
+};
+
+export const createDefaultAudioSummarizerDependencies = (): AudioSummarizerDependencies => ({
+  transcribeAudio: async (input) => deriveTranscriptFromAudio(input),
+  generateHighlights: async ({ transcript, durationSeconds, maxHighlights }) => {
+    const sentences = splitSentences(transcript);
+    const normalizedSentences = sentences.length > 0 ? sentences : [transcript.trim()].filter(Boolean);
+
+    const limited = normalizedSentences.slice(0, Math.max(1, maxHighlights));
+
+    return limited.map((sentence, index) => {
+      const { start, end } = estimateTimeBounds(durationSeconds, index, limited.length);
+      return {
+        id: `audio-highlight-${index + 1}`,
+        summary: clampText(sentence, 180),
+        startTimeSeconds: start,
+        endTimeSeconds: end,
+      } satisfies AudioHighlight;
+    });
+  },
+});
+

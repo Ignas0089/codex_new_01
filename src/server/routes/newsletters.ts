@@ -11,6 +11,16 @@ import {
   serializeNewsletterUploadErrorResponse,
   serializeNewsletterUploadSuccessResponse,
 } from "../../services/validation/newsletterSchemas";
+import { assembleNewsletter } from "../../services/newsletterAssembler";
+import {
+  summarizeMeetingAudio,
+  createDefaultAudioSummarizerDependencies,
+} from "../../services/audioSummarizer";
+import {
+  synthesizeMeetingContent,
+  createDefaultTranscriptSynthesizerDependencies,
+} from "../../services/transcriptSynthesizer";
+import { createDefaultFreeformTopicGenerator } from "../../services/freeformTopicGenerator";
 
 const MAX_UPLOAD_SIZE_BYTES = 200 * 1024 * 1024; // Keep in sync with validator guard rail
 
@@ -58,9 +68,47 @@ newslettersRouter.post(
       return;
     }
 
-    res
-      .status(200)
-      .json(serializeNewsletterUploadSuccessResponse(validation.payload));
+    const audioData = req.file?.buffer ? Uint8Array.from(req.file.buffer) : undefined;
+
+    try {
+      const audioDependencies = createDefaultAudioSummarizerDependencies();
+      const transcriptDependencies = createDefaultTranscriptSynthesizerDependencies();
+      const generateFreeformTopic = createDefaultFreeformTopicGenerator();
+
+      const newsletter = await assembleNewsletter({
+        request: validation.payload,
+        audioData,
+        dependencies: {
+          summarizeAudio: validation.payload.audio
+            ? (params) =>
+                summarizeMeetingAudio({
+                  ...params,
+                  dependencies: audioDependencies,
+                })
+            : undefined,
+          synthesizeContent: (params) =>
+            synthesizeMeetingContent({
+              ...params,
+              dependencies: transcriptDependencies,
+            }),
+          generateFreeformTopic,
+        },
+      });
+
+      res
+        .status(200)
+        .json(serializeNewsletterUploadSuccessResponse(validation.payload, newsletter));
+    } catch (error) {
+      console.error("Failed to assemble newsletter", error);
+      res.status(500).json(
+        serializeNewsletterUploadErrorResponse([
+          {
+            field: "form",
+            message: "Unable to assemble newsletter content. Please try again.",
+          },
+        ]),
+      );
+    }
   },
 );
 

@@ -246,3 +246,72 @@ const normalizeMaxBodyLength = (maxBodyLength?: number): number => {
 
   return Math.min(Math.round(maxBodyLength), 3000);
 };
+
+const formatBulletList = (
+  label: string,
+  values: { id: string; summary: string; owner?: string }[],
+): string | undefined => {
+  if (values.length === 0) {
+    return undefined;
+  }
+
+  const serialized = values
+    .slice(0, 3)
+    .map((value) => {
+      const ownerLabel = value.owner ? ` (Owner: ${value.owner})` : "";
+      return `• ${value.summary}${ownerLabel}`;
+    })
+    .join("\n");
+
+  return `${label}:\n${serialized}`;
+};
+
+export const createDefaultFreeformTopicGenerator = () =>
+  createFreeformTopicGenerator({
+    dependencies: {
+      draftCopy: async ({ prompt, context }) => {
+        const bodySections: string[] = [];
+
+        if (context.summary) {
+          bodySections.push(context.summary);
+        }
+
+        const decisionSection = formatBulletList(
+          "Key decisions",
+          context.decisions.map((decision) => ({ ...decision })),
+        );
+        if (decisionSection) {
+          bodySections.push(decisionSection);
+        }
+
+        const actionSection = formatBulletList(
+          "Action items",
+          context.actionItems.map((item) => ({ ...item })),
+        );
+        if (actionSection) {
+          bodySections.push(actionSection);
+        }
+
+        if (context.audioHighlights.length > 0) {
+          const highlights = context.audioHighlights
+            .slice(0, 3)
+            .map((highlight) => `• ${highlight.summary}`)
+            .join("\n");
+          bodySections.push(`Audio highlights:\n${highlights}`);
+        }
+
+        const body = bodySections.length
+          ? bodySections.join("\n\n")
+          : "Celebrate wins, shout out contributors, and reinforce momentum from the discussion.";
+
+        return {
+          title: prompt?.topic ?? undefined,
+          body,
+          toneGuidance: context.tone,
+          confidence: 0.65,
+          isPromptAligned: Boolean(prompt),
+        } satisfies DraftFreeformTopicResult;
+      },
+    },
+    options: { defaultToneGuidance: DEFAULT_TONE_GUIDANCE },
+  });

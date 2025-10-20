@@ -88,6 +88,7 @@ export const assembleNewsletter = async ({
 
   const createdAt = (now ?? defaultNowFactory)().toISOString();
   const processingTimeMs = Date.now() - startedAt;
+  const warnings = collectWarnings({ audioSummary, transcriptSynthesis });
 
   return {
     sections: structured,
@@ -96,7 +97,30 @@ export const assembleNewsletter = async ({
       processingTimeMs,
       audioSummaryIncluded: Boolean(audioSummary),
     },
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
+};
+
+interface CollectWarningsArgs {
+  audioSummary?: AudioHighlightsSummary;
+  transcriptSynthesis: TranscriptSynthesisResult;
+}
+
+const collectWarnings = ({
+  audioSummary,
+  transcriptSynthesis,
+}: CollectWarningsArgs): string[] => {
+  const aggregated: string[] = [];
+
+  if (audioSummary?.warnings?.length) {
+    aggregated.push(...audioSummary.warnings);
+  }
+
+  if (transcriptSynthesis.metadata.warnings?.length) {
+    aggregated.push(...transcriptSynthesis.metadata.warnings);
+  }
+
+  return aggregated;
 };
 
 interface BuildStructuredNewsletterArgs {
