@@ -38,6 +38,47 @@ The internal newsletter generator will help the team assemble a polished newslet
 - Provide a clean, text-first interface optimized for reviewing and editing generated sections.
 - Clearly delineate each newsletter section (Introduction, Main Updates, Action Items, Closing, Freeform Topic) for easy editing.
 
+## Visual and Interaction Design Guidelines
+
+### Design Principles
+- **Calm Clarity:** Every surface and control should feel intentional, with whitespace that keeps the workflow relaxed and legible.
+- **Focused Flow:** Limit on-screen elements to the current step so users can move from upload to preview without distractions.
+- **Friendly Professionalism:** Maintain a trustworthy tone with microcopy and visuals that feel warm rather than sterile.
+- **Information Hierarchy:** Organize layouts so primary inputs, generated content, and actions are clearly separated.
+- **Subtle Delight:** Employ lightweight animation and hover states to keep the experience from feeling monotonous.
+
+### Color Palette
+- **Primary – Dusty Blue (#4A5A6A):** Headings, primary actions, and key icons.
+- **Secondary – Soft Gray (#F4F5F7):** Section backgrounds and form containers.
+- **Accent – Warm Coral (#FF6B6B):** Error states or highlight callouts.
+- **Accent – Soft Green (#00B894):** Success confirmations and positive toasts.
+- **Surface – White (#FFFFFF):** Cards, inputs, and preview panes.
+- **Shadows – rgba(0, 0, 0, 0.05):** Depth and elevation.
+
+### Typography
+- **Primary Font:** Inter (Regular 400 for body copy, Medium 500 for labels, Semibold 600 for secondary headings, Bold 700 for main headings).
+- **Secondary Font (Optional):** Roboto Mono for transcripts or code-style inputs.
+- **Recommended Sizes:** H1 24px, H2 20px, H3 18px, body text 16px, labels 14px, button text 14px uppercase.
+
+### Key Screens and Layouts
+- **Upload Dashboard:** Two-panel layout with inputs on the left and a live preview on the right. Include drag-and-drop audio upload, expandable cards for recap and transcript, and a sticky action bar for Process, Preview, and Reset.
+- **Editor View:** Stack generated sections as cards (Introduction, Main Updates, Action Items, Closing, Freeform Topic) with inline editable fields, helper text, and icon buttons. Highlight AI-generated regions with a subtle tint (e.g., #FDF6F2).
+- **Processing Flow:** Provide step indicators, animated loading (waveform or pulsing dots), and confirmation toasts.
+- **Resource Modules:** Optional cards for “Tips for Better Recaps,” “Recent Templates,” or archive carousels to reinforce best practices.
+- **Profile/Preferences (Optional):** Minimal settings for saved preferences, tone selection, or anonymization toggles.
+
+### Microinteractions and Accessibility
+- Buttons use gentle hover states (e.g., lighter secondary background) and slight scale on click.
+- Cards gain a modest shadow on hover to indicate interactivity.
+- Support reduced motion preferences and ensure focus states are keyboard-visible.
+- Maintain 44px minimum touch targets and 24px spacing between major sections.
+- Offer high-contrast text/background pairings that satisfy WCAG AA.
+
+### Performance and Privacy Considerations
+- Prefer SVG illustrations and lazy-load long transcript sections.
+- Debounce syncing for large text inputs and cache recent uploads locally for quick reuse.
+- Provide clear deletion confirmations, offer anonymization toggles, and highlight data-retention expectations for internal compliance.
+
 ## Technical Considerations
 - Audio summarization should respect the 60-minute limit and handle large uploads efficiently.
 - Ensure text inputs support sufficient length for full transcripts (potentially long-form content).
