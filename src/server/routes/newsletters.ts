@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import multer from "multer";
 
@@ -21,6 +21,7 @@ import {
   createDefaultTranscriptSynthesizerDependencies,
 } from "../../services/transcriptSynthesizer";
 import { createDefaultFreeformTopicGenerator } from "../../services/freeformTopicGenerator";
+import type { ValidationErrorDetail } from "../../types/newsletter";
 
 const MAX_UPLOAD_SIZE_BYTES = 200 * 1024 * 1024; // Keep in sync with validator guard rail
 
@@ -50,7 +51,7 @@ const newslettersRouter = Router();
 newslettersRouter.post(
   "/newsletters",
   upload.single("audio"),
-  (req: MulterRequest, res: Response): void => {
+  async (req: MulterRequest, res: Response): Promise<void> => {
     const parseResult = parseNewsletterUploadRequest(
       req.body,
       req.file ? toUploadedFileDescriptor(req.file) : undefined,
@@ -112,4 +113,55 @@ newslettersRouter.post(
   },
 );
 
+newslettersRouter.use(
+  (error: unknown, _req: Request, res: Response, next: NextFunction): void => {
+    if (!(error instanceof multer.MulterError)) {
+      next(error);
+      return;
+    }
+
+    const errorDetail = mapMulterErrorToValidationError(error);
+    const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+
+    res.status(status).json(serializeNewsletterUploadErrorResponse([errorDetail]));
+  },
+);
+
 export default newslettersRouter;
+
+const mapMulterErrorToValidationError = (error: multer.MulterError): ValidationErrorDetail => {
+  switch (error.code) {
+    case "LIMIT_FILE_SIZE":
+      return {
+        field: "audio",
+        message: "Audio file exceeds the 200MB size limit.",
+        code: "LIMIT_EXCEEDED",
+      };
+    case "LIMIT_FILE_COUNT":
+    case "LIMIT_PART_COUNT":
+      return {
+        field: "audio",
+        message: "Only a single audio file can be uploaded per request.",
+        code: "LIMIT_EXCEEDED",
+      };
+    case "LIMIT_UNEXPECTED_FILE":
+      return {
+        field: "audio",
+        message: "Unexpected file upload received. Please attach a valid audio file.",
+        code: "INVALID_FORMAT",
+      };
+    case "LIMIT_FIELD_KEY":
+    case "LIMIT_FIELD_VALUE":
+    case "LIMIT_FIELD_COUNT":
+      return {
+        field: "form",
+        message: "Submitted form fields exceeded the allowed limits. Please try again.",
+        code: "INVALID_FORMAT",
+      };
+    default:
+      return {
+        field: "form",
+        message: "Unable to process the uploaded file. Please try again.",
+      };
+  }
+};
