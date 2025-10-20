@@ -116,6 +116,35 @@ If you'd like to see this in action, I demonstrated it on [Claire Vo's "How I AI
     * Feel free to modify the prompts within the `.md` files to better suit your specific needs or coding style.
     * If the AI struggles with a task, try rephrasing your initial feature description or breaking down tasks even further.
 
+## 🧪 Local Development & Testing
+
+This repository now includes a combined Node and React toolchain powered by TypeScript and Jest so you can exercise the example
+services and UI.
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Run the automated test suite**
+
+   ```bash
+   npm test
+   ```
+
+   This command executes all tests in the `tests/` directory using Jest with `ts-jest`, React Testing Library, and the shared
+   TypeScript configuration.
+
+3. **Optional: Type-check the codebase**
+
+   ```bash
+   npm run typecheck
+   ```
+
+   Running the type checker ensures the backend Express route handlers and the React UI components compile with the shared
+   `tsconfig.json` settings.
+
 ## Tool-Specific Instructions
 
 ### Cursor
