@@ -1,6 +1,7 @@
 import {
   NewsletterUploadPayload,
   ValidationErrorDetail,
+  NewsletterGenerationResponse,
 } from "../../types/newsletter";
 import {
   NewsletterUploadValidationContext,
@@ -149,6 +150,7 @@ export const parseNewsletterUploadRequest = (
 export interface NewsletterUploadSuccessResponse {
   message: string;
   payload: NewsletterUploadPayload;
+  newsletter: NewsletterGenerationResponse;
 }
 
 export interface NewsletterUploadErrorResponse {
@@ -157,9 +159,11 @@ export interface NewsletterUploadErrorResponse {
 
 export const serializeNewsletterUploadSuccessResponse = (
   payload: NewsletterUploadPayload,
+  newsletter: NewsletterGenerationResponse,
 ): NewsletterUploadSuccessResponse => ({
-  message: "Upload validated.",
+  message: "Newsletter assembled successfully.",
   payload,
+  newsletter,
 });
 
 export const serializeNewsletterUploadErrorResponse = (

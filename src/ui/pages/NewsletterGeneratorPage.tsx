@@ -2,8 +2,8 @@ import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "rea
 import {
   ActionItem,
   ActionItemsSection,
-  FreeformTopicSuggestion,
   MAX_AUDIO_DURATION_SECONDS,
+  NewsletterGenerationResponse,
   NewsletterSection,
   StructuredNewsletter,
   SUPPORTED_AUDIO_MIME_TYPES,
@@ -32,7 +32,6 @@ interface DraftSummary {
 
 const MAX_FREEFORM_TOPIC_LENGTH = 80;
 const MAX_FREEFORM_INSTRUCTIONS_LENGTH = 500;
-const PREVIEW_SNIPPET_LENGTH = 600;
 const FREEFORM_SECTION_ID = "freeform-topic-preview";
 
 const KNOWN_ERROR_FIELDS = new Set([
@@ -51,6 +50,7 @@ type SubmissionState = "idle" | "submitting" | "succeeded" | "failed";
 interface UploadSuccessResponse {
   message?: string;
   payload: NewsletterUploadPayload;
+  newsletter: NewsletterGenerationResponse;
 }
 
 interface UploadErrorResponse {
@@ -88,6 +88,9 @@ export const NewsletterGeneratorPage: React.FC = () => {
   const [newsletterCopyFeedback, setNewsletterCopyFeedback] = useState<NewsletterCopyFeedback>({
     status: "idle",
   });
+  const [newsletterWarnings, setNewsletterWarnings] = useState<string[]>([]);
+  const [newsletterMetadata, setNewsletterMetadata] =
+    useState<NewsletterGenerationResponse["metadata"] | null>(null);
 
   const allowedAudioTypesLabel = useMemo(
     () => SUPPORTED_AUDIO_MIME_TYPES.map((type) => type.replace("audio/", "")).join(", "),
@@ -139,6 +142,8 @@ export const NewsletterGeneratorPage: React.FC = () => {
     setServerErrors([]);
     setStatusMessage(null);
     setNewsletterCopyFeedback({ status: "idle" });
+    setNewsletterWarnings([]);
+    setNewsletterMetadata(null);
   };
 
   const handleAudioChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -217,18 +222,24 @@ export const NewsletterGeneratorPage: React.FC = () => {
         );
         setStatusMessage("We couldn’t process the upload. Please review the highlighted fields.");
         setSubmissionState("failed");
+        setNewsletterWarnings([]);
+        setNewsletterMetadata(null);
         return;
       }
 
       const successData = data as UploadSuccessResponse;
-      if (!successData.payload) {
+      if (!successData.payload || !successData.newsletter) {
         setStatusMessage("Received an unexpected response from the server. Please try again.");
         setSubmissionState("failed");
+        setNewsletterWarnings([]);
+        setNewsletterMetadata(null);
         return;
       }
       const sanitizedState = buildSanitizedFormState(formState, successData.payload);
       setFormState(sanitizedState);
-      setDraftSections(buildPreviewNewsletter(sanitizedState));
+      setDraftSections(successData.newsletter.sections);
+      setNewsletterWarnings(successData.newsletter.warnings ?? []);
+      setNewsletterMetadata(successData.newsletter.metadata);
       setServerErrors([]);
       setSubmissionState("succeeded");
       setStatusMessage(successData.message ?? "Draft prepared. Review the generated sections below.");
@@ -237,6 +248,8 @@ export const NewsletterGeneratorPage: React.FC = () => {
       setServerErrors([{ field: "form", message: "Network error while submitting. Please try again." }]);
       setStatusMessage("Network error while submitting. Please try again.");
       setSubmissionState("failed");
+      setNewsletterWarnings([]);
+      setNewsletterMetadata(null);
     }
   };
 
@@ -548,6 +561,22 @@ export const NewsletterGeneratorPage: React.FC = () => {
             {statusMessage}
           </p>
         ) : null}
+        {newsletterWarnings.length > 0 ? (
+          <ul className="form-hint newsletter-generator__warnings" role="status">
+            {newsletterWarnings.map((warning, index) => (
+              <li key={`warning-${index}`}>{warning}</li>
+            ))}
+          </ul>
+        ) : null}
+        {newsletterMetadata ? (
+          <p className="form-hint" role="status">
+            Draft generated {new Date(newsletterMetadata.createdAt).toLocaleString()}.
+            {" "}
+            {newsletterMetadata.audioSummaryIncluded
+              ? "Audio highlights were included in this draft."
+              : "Audio highlights were not included in this draft."}
+          </p>
+        ) : null}
         {generalErrors.length > 0 ? (
           <ul className="form-error" role="alert">
             {generalErrors.map((error, index) => (
@@ -609,127 +638,6 @@ export const NewsletterGeneratorPage: React.FC = () => {
 
 export default NewsletterGeneratorPage;
 
-const splitSentences = (text: string) =>
-  text
-    .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 0);
-
-const clampText = (value: string, maxLength: number) =>
-  value.length <= maxLength ? value : `${value.slice(0, Math.max(0, maxLength - 1))}…`;
-
-const deriveRecapHighlights = (recap: string): string[] =>
-  splitSentences(recap).slice(0, 3).map((sentence) => clampText(sentence, 140));
-
-const deriveMainUpdates = (transcript: string): NewsletterSection[] => {
-  if (!transcript.trim()) {
-    return [
-      {
-        id: "main-update-placeholder",
-        title: "Main updates",
-        body: "Add transcript details to generate targeted updates for the team.",
-      },
-    ];
-  }
-
-  const sentences = splitSentences(transcript);
-  const summary = clampText(sentences.slice(0, 4).join(" "), PREVIEW_SNIPPET_LENGTH);
-
-  return [
-    {
-      id: "main-update-1",
-      title: "Main updates",
-      body: summary,
-      highlights: sentences.slice(0, 3).map((sentence) => clampText(sentence, 160)),
-    },
-  ];
-};
-
-const deriveActionItems = (recap: string): ActionItem[] => {
-  const lines = recap
-    .split(/\n|•|-|\*/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  if (lines.length === 0) {
-    return [
-      {
-        id: "preview-action-1",
-        summary: "Add concrete next steps to the recap to capture action items.",
-      },
-    ];
-  }
-
-  return lines.slice(0, 4).map((line, index) => ({
-    id: `preview-action-${index + 1}`,
-    summary: clampText(line, 160),
-  }));
-};
-
-const buildPreviewNewsletter = (state: FormState): StructuredNewsletter => {
-  const recap = state.meetingRecap.trim();
-  const transcript = state.transcript.trim();
-
-  const introduction: NewsletterSection = {
-    id: "introduction",
-    title: "Introduction",
-    body: recap
-      ? clampText(recap, PREVIEW_SNIPPET_LENGTH)
-      : "Add a meeting recap to generate the introductory summary.",
-    highlights: recap ? deriveRecapHighlights(recap) : undefined,
-  };
-
-  const mainUpdates = deriveMainUpdates(transcript);
-
-  const actionItemsList = deriveActionItems(recap);
-  const actionItems: ActionItemsSection = {
-    id: "action-items",
-    title: "Action items",
-    body:
-      actionItemsList.length > 0
-        ? "Review and confirm ownership before sharing with the broader team."
-        : "No action items captured yet.",
-    items: actionItemsList,
-  };
-
-  const closing: NewsletterSection = {
-    id: "closing",
-    title: "Closing notes",
-    body: recap
-      ? clampText(
-          `Thanks${state.recapAuthor ? ` to ${state.recapAuthor}` : ""} for capturing the discussion. Keep the momentum going by following up on the action items above.`,
-          320
-        )
-      : "Provide recap context to generate tailored closing notes.",
-  };
-
-  const topicTitle = state.freeformTopic.trim() || "Freeform topic suggestion";
-  const instructions = state.freeformInstructions.trim();
-  const baseBody = instructions
-    ? `Tone guidance: ${instructions}\n\nUse this space to expand on ${topicTitle.toLowerCase()}.`
-    : `Use this space to expand on ${topicTitle.toLowerCase()}. Share shout-outs, wins, or deep dives.`;
-
-  const freeformTopic: FreeformTopicSuggestion = {
-    prompt: state.freeformTopic
-      ? {
-          topic: state.freeformTopic.trim(),
-          instructions: instructions || undefined,
-        }
-      : undefined,
-    title: topicTitle,
-    body: clampText(baseBody, PREVIEW_SNIPPET_LENGTH),
-    toneGuidance: instructions || "Keep the tone friendly and actionable for internal readers.",
-    isPromptAligned: true,
-  };
-
-  return {
-    introduction,
-    mainUpdates,
-    actionItems,
-    closing,
-    freeformTopic,
-  };
-};
 
 const buildSanitizedFormState = (
   state: FormState,

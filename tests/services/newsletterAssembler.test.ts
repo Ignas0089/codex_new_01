@@ -138,6 +138,8 @@ describe("assembleNewsletter", () => {
       audioSummaryIncluded: true,
     });
 
+    expect(response.warnings).toBeUndefined();
+
     expect(generateFreeformTopic).toHaveBeenCalledWith({
       prompt: request.freeformTopicPrompt,
       context: expect.objectContaining({
@@ -184,6 +186,7 @@ describe("assembleNewsletter", () => {
     expect(response.sections.freeformTopic.title).toBe("Additional Topic");
     expect(response.sections.freeformTopic.toneGuidance).toContain("Friendly internal tone");
     expect(response.metadata.audioSummaryIncluded).toBe(false);
+    expect(response.warnings).toBeUndefined();
   });
 
   it("handles partial action item details and audio warnings", async () => {
@@ -210,5 +213,6 @@ describe("assembleNewsletter", () => {
     expect(response.sections.actionItems.body).toContain("Follow up item 1");
     expect(response.sections.actionItems.body).toContain("Schedule follow-up");
     expect(response.sections.closing.body).toContain("Note: Audio truncated");
+    expect(response.warnings).toEqual(["Audio truncated"]);
   });
 });

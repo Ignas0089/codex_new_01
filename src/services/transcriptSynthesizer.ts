@@ -198,6 +198,115 @@ const normalizeSummaryMaxLength = (value: number | undefined): number => {
   return Math.min(Math.round(value), DEFAULT_SUMMARY_MAX_LENGTH);
 };
 
+const splitSentences = (text: string): string[] =>
+  text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0);
+
+const clampText = (value: string, maxLength: number): string =>
+  value.length <= maxLength ? value : `${value.slice(0, Math.max(0, maxLength - 1))}…`;
+
+const determineSource = (
+  sentence: string,
+  recapText: string,
+  transcriptText: string,
+): SynthesizedContentSource => {
+  const normalizedSentence = sentence.toLowerCase();
+  const recapIndex = recapText.toLowerCase().indexOf(normalizedSentence);
+  const transcriptIndex = transcriptText.toLowerCase().indexOf(normalizedSentence);
+
+  if (recapIndex >= 0 && transcriptIndex >= 0) {
+    return "both";
+  }
+
+  if (recapIndex >= 0) {
+    return "recap";
+  }
+
+  if (transcriptIndex >= 0) {
+    return "transcript";
+  }
+
+  return recapText ? "recap" : "transcript";
+};
+
+const DECISION_KEYWORDS = [/decid/i, /agree/i, /approve/i, /plan/i, /commit/i];
+const ACTION_KEYWORDS = [/action/i, /follow[-\s]?up/i, /next step/i, /assign/i, /owner/i, /todo/i];
+const INSIGHT_KEYWORDS = [/insight/i, /learn/i, /noted?/i, /highlight/i, /trend/i, /metric/i, /win/i];
+
+const matchesKeywords = (sentence: string, keywords: RegExp[]): boolean =>
+  keywords.some((keyword) => keyword.test(sentence));
+
+const buildSummary = ({ combinedText, maxLength }: { combinedText: string; maxLength: number }): string => {
+  const sentences = splitSentences(combinedText);
+  if (sentences.length === 0) {
+    return clampText(combinedText.trim(), maxLength);
+  }
+
+  return clampText(sentences.slice(0, 4).join(" "), maxLength);
+};
+
+const buildDecisionSummaries = ({
+  recapText,
+  transcriptText,
+}: BaseSynthesisInput): SynthesizedDecision[] => {
+  const recapSentences = splitSentences(recapText);
+  const transcriptSentences = splitSentences(transcriptText);
+  const combined = [...recapSentences, ...transcriptSentences];
+
+  const candidates = combined.filter((sentence) => matchesKeywords(sentence, DECISION_KEYWORDS));
+
+  return candidates.slice(0, 5).map((sentence, index) => ({
+    id: `decision-${index + 1}`,
+    summary: sentence.replace(/\s+/g, " ").trim(),
+    source: determineSource(sentence, recapText, transcriptText),
+    rationale: undefined,
+  }));
+};
+
+const buildActionItems = ({ recapText, transcriptText }: BaseSynthesisInput): ActionItem[] => {
+  const bulletCandidates = [recapText, transcriptText]
+    .flatMap((text) =>
+      text
+        .split(/\r?\n|•|-|\*/)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    )
+    .filter((entry, index, all) => all.indexOf(entry) === index);
+
+  const sentenceCandidates = [...splitSentences(recapText), ...splitSentences(transcriptText)];
+  const allCandidates = [...bulletCandidates, ...sentenceCandidates];
+
+  const filtered = allCandidates.filter((candidate) => matchesKeywords(candidate, ACTION_KEYWORDS));
+
+  return filtered.slice(0, 8).map((candidate, index) => ({
+    id: `action-${index + 1}`,
+    summary: candidate.replace(/\s+/g, " ").trim(),
+    owner: undefined,
+    dueDate: undefined,
+    source: determineSource(candidate, recapText, transcriptText),
+  }));
+};
+
+const buildInsights = ({ recapText, transcriptText }: BaseSynthesisInput): SynthesizedInsight[] => {
+  const sentences = [...splitSentences(recapText), ...splitSentences(transcriptText)];
+  const candidates = sentences.filter((sentence) => matchesKeywords(sentence, INSIGHT_KEYWORDS));
+
+  return candidates.slice(0, 5).map((sentence, index) => ({
+    id: `insight-${index + 1}`,
+    summary: sentence.replace(/\s+/g, " ").trim(),
+    source: determineSource(sentence, recapText, transcriptText),
+  }));
+};
+
+export const createDefaultTranscriptSynthesizerDependencies = (): TranscriptSynthesizerDependencies => ({
+  summarize: async ({ combinedText, maxLength }) => buildSummary({ combinedText, maxLength }),
+  extractDecisions: async (input) => buildDecisionSummaries(input),
+  extractActionItems: async (input) => buildActionItems(input),
+  extractInsights: async (input) => buildInsights(input),
+});
+
 const sanitizeDecisions = (decisions: SynthesizedDecision[] | undefined): SynthesizedDecision[] => {
   if (!Array.isArray(decisions)) {
     return [];

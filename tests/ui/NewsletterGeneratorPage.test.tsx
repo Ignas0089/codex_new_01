@@ -48,8 +48,50 @@ describe("NewsletterGeneratorPage", () => {
     const fetchMock = jest.fn();
     (globalThis as any).fetch = fetchMock;
 
+    const structured = {
+      introduction: {
+        id: "introduction",
+        title: "Introduction",
+        body: "We shipped the new onboarding flow and highlighted next steps.",
+      },
+      mainUpdates: [
+        {
+          id: "main-1",
+          title: "Key Decisions",
+          body: "Approved the phased rollout plan and aligned on launch metrics.",
+        },
+      ],
+      actionItems: {
+        id: "action-items",
+        title: "Action items",
+        body: "Confirm ownership before sharing more broadly.",
+        items: [
+          {
+            id: "action-1",
+            summary: "Draft launch announcement",
+            owner: "Taylor",
+          },
+        ],
+      },
+      closing: {
+        id: "closing",
+        title: "Closing",
+        body: "Thanks for the collaboration—let's keep momentum heading into next sprint.",
+      },
+      freeformTopic: {
+        prompt: {
+          topic: "Team Spotlight",
+          instructions: "Celebrate the latest team achievements.",
+        },
+        title: "Team Spotlight",
+        body: "Recognize teammates who unblocked the launch and kept morale high.",
+        toneGuidance: "Keep it upbeat and focused on wins.",
+        isPromptAligned: true,
+      },
+    } as const;
+
     const json = jest.fn().mockResolvedValue({
-      message: "Upload processed successfully.",
+      message: "Newsletter assembled successfully.",
       payload: {
         audio: { durationSeconds: 1200, filename: "meeting.mp3", mimeType: "audio/mpeg" },
         meetingRecap: {
@@ -62,6 +104,15 @@ describe("NewsletterGeneratorPage", () => {
           topic: "Team Spotlight",
           instructions: "Celebrate the latest team achievements.",
         },
+      },
+      newsletter: {
+        sections: structured,
+        metadata: {
+          createdAt: "2024-05-01T12:00:00.000Z",
+          processingTimeMs: 1520,
+          audioSummaryIncluded: true,
+        },
+        warnings: ["Audio truncated for analysis."],
       },
     });
 
@@ -95,7 +146,7 @@ describe("NewsletterGeneratorPage", () => {
     });
     expect(introductionHeading).toBeInTheDocument();
 
-    expect(await screen.findByText("Upload processed successfully.")).toBeInTheDocument();
+    expect(await screen.findByText("Newsletter assembled successfully.")).toBeInTheDocument();
     expect(screen.getByText('Audio duration: 20 minutes')).toBeInTheDocument();
 
     const freeformSupporting = screen.getByText('Prompted by "Team Spotlight"');
@@ -108,6 +159,11 @@ describe("NewsletterGeneratorPage", () => {
       const sectionScope = within(freeformEditor);
       expect(sectionScope.getByLabelText(/Section title/i)).toHaveValue("Team Spotlight");
     }
+
+    expect(screen.getByText("Audio truncated for analysis.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Audio highlights were included in this draft\./),
+    ).toBeInTheDocument();
 
     await waitFor(() => expect(submitButton).not.toBeDisabled());
     expect(submitButton).toHaveTextContent("Generate newsletter");

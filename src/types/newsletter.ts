@@ -154,6 +154,7 @@ export interface NewsletterGenerationResponse {
     tokensConsumed?: number;
     audioSummaryIncluded: boolean;
   };
+  warnings?: string[];
 }
 
 export interface ValidationErrorDetail {
