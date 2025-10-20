@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internal Newsletter Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar" role="banner">
+        <div class="topbar__brand">
+          <span class="topbar__logo" aria-hidden="true">✉️</span>
+          <div>
+            <p class="topbar__title">Internal Newsletter Generator</p>
+            <p class="topbar__subtitle">Turn meetings into polished updates in minutes.</p>
+          </div>
+        </div>
+        <button class="button button--outline" type="button">View Templates</button>
+      </header>
+
+      <main class="workspace" role="main">
+        <section class="panel panel--inputs" aria-labelledby="inputs-heading">
+          <div class="panel__header">
+            <h1 id="inputs-heading">Input Materials</h1>
+            <p class="panel__description">
+              Upload meeting assets and provide context. We'll summarize and assemble the newsletter for you.
+            </p>
+          </div>
+
+          <div class="card upload" role="group" aria-labelledby="upload-heading">
+            <div class="card__header">
+              <div class="card__title-group">
+                <span class="icon icon--circle" aria-hidden="true">🔊</span>
+                <h2 id="upload-heading">Audio Recap</h2>
+              </div>
+              <button class="button button--ghost" type="button">Supported formats</button>
+            </div>
+            <div class="upload__dropzone" role="button" tabindex="0" aria-label="Upload audio file">
+              <p class="upload__primary">Drag &amp; drop audio here</p>
+              <p class="upload__secondary">or <span class="link">browse</span> to select a file (MP3, WAV · up to 60 min)</p>
+            </div>
+            <p class="helper-text">Tip: Share the most recent project recap to capture highlights.</p>
+          </div>
+
+          <div class="card" role="group" aria-labelledby="recap-heading">
+            <div class="card__header">
+              <div class="card__title-group">
+                <span class="icon icon--circle" aria-hidden="true">📝</span>
+                <h2 id="recap-heading">Meeting Recap</h2>
+              </div>
+              <button class="button button--ghost" type="button">Paste from notes</button>
+            </div>
+            <label class="field">
+              <span class="field__label">Summary</span>
+              <textarea class="field__input" rows="4" placeholder="Key outcomes, decisions, and stakeholders"></textarea>
+            </label>
+            <p class="helper-text">Keep it conversational. We'll tighten tone automatically.</p>
+          </div>
+
+          <div class="card" role="group" aria-labelledby="transcript-heading">
+            <div class="card__header">
+              <div class="card__title-group">
+                <span class="icon icon--circle" aria-hidden="true">📜</span>
+                <h2 id="transcript-heading">Full Transcript</h2>
+              </div>
+              <button class="button button--ghost" type="button">Import from Docs</button>
+            </div>
+            <label class="field">
+              <span class="field__label">Transcript text</span>
+              <textarea class="field__input field__input--monospace" rows="8" placeholder="Paste transcript or sync from meeting tool"></textarea>
+            </label>
+            <div class="anonymize-toggle" role="group" aria-label="Anonymize transcript">
+              <input class="switch" type="checkbox" id="anonymize" />
+              <label for="anonymize">Anonymize participant names</label>
+            </div>
+          </div>
+
+          <div class="card" role="group" aria-labelledby="freeform-heading">
+            <div class="card__header">
+              <div class="card__title-group">
+                <span class="icon icon--circle" aria-hidden="true">💡</span>
+                <h2 id="freeform-heading">Freeform Topic</h2>
+              </div>
+              <button class="button button--ghost" type="button">Browse prompts</button>
+            </div>
+            <label class="field">
+              <span class="field__label">Prompt</span>
+              <input class="field__input" type="text" placeholder="e.g., Spotlight on the marketing launch" />
+            </label>
+            <p class="helper-text">We'll suggest a polished narrative you can edit before publishing.</p>
+          </div>
+        </section>
+
+        <section class="panel panel--preview" aria-labelledby="preview-heading">
+          <div class="panel__header">
+            <h1 id="preview-heading">Preview &amp; Edit</h1>
+            <div class="status-chip status-chip--processing" role="status">
+              <span class="dot" aria-hidden="true"></span>
+              Summarizing…
+            </div>
+          </div>
+
+          <article class="newsletter-card" aria-labelledby="intro-heading">
+            <header class="newsletter-card__header">
+              <h2 id="intro-heading">Introduction</h2>
+              <span class="badge">Generated by AI</span>
+            </header>
+            <div class="newsletter-card__body" contenteditable="true">
+              Hi team! Here's a quick recap of our marketing sync, including decisions, milestones, and action items for the week ahead.
+            </div>
+            <footer class="newsletter-card__footer">
+              <button class="icon-button" type="button" aria-label="Copy section">
+                <span aria-hidden="true">📋</span>
+              </button>
+              <button class="icon-button" type="button" aria-label="Reset to AI suggestion">
+                <span aria-hidden="true">⟳</span>
+              </button>
+              <button class="icon-button icon-button--danger" type="button" aria-label="Delete section">
+                <span aria-hidden="true">🗑️</span>
+              </button>
+            </footer>
+          </article>
+
+          <article class="newsletter-card" aria-labelledby="updates-heading">
+            <header class="newsletter-card__header">
+              <h2 id="updates-heading">Main Updates</h2>
+              <span class="badge">Generated by AI</span>
+            </header>
+            <div class="newsletter-card__body" contenteditable="true">
+              <ul>
+                <li><strong>Product launch:</strong> On track for May 12, with beta feedback incorporated.</li>
+                <li><strong>Campaign creative:</strong> New hero graphics approved and scheduled for localization.</li>
+                <li><strong>Budget:</strong> Finance greenlit Q3 expansion experiments within existing spend.</li>
+              </ul>
+            </div>
+            <footer class="newsletter-card__footer">
+              <button class="icon-button" type="button" aria-label="Copy section">
+                <span aria-hidden="true">📋</span>
+              </button>
+              <button class="icon-button" type="button" aria-label="Reset to AI suggestion">
+                <span aria-hidden="true">⟳</span>
+              </button>
+              <button class="icon-button icon-button--danger" type="button" aria-label="Delete section">
+                <span aria-hidden="true">🗑️</span>
+              </button>
+            </footer>
+          </article>
+
+          <article class="newsletter-card" aria-labelledby="actions-heading">
+            <header class="newsletter-card__header">
+              <h2 id="actions-heading">Action Items</h2>
+              <span class="badge badge--accent">3 owners</span>
+            </header>
+            <div class="newsletter-card__body" contenteditable="true">
+              <ol>
+                <li>Content: Finalize launch blog draft by Thursday (Maya).</li>
+                <li>Sales: Share enablement deck updates in Friday's stand-up (Ravi).</li>
+                <li>Analytics: Build dashboard for campaign KPIs (Ayo) before next sync.</li>
+              </ol>
+            </div>
+            <footer class="newsletter-card__footer">
+              <button class="icon-button" type="button" aria-label="Copy section">
+                <span aria-hidden="true">📋</span>
+              </button>
+              <button class="icon-button" type="button" aria-label="Reset to AI suggestion">
+                <span aria-hidden="true">⟳</span>
+              </button>
+              <button class="icon-button icon-button--danger" type="button" aria-label="Delete section">
+                <span aria-hidden="true">🗑️</span>
+              </button>
+            </footer>
+          </article>
+
+          <article class="newsletter-card" aria-labelledby="closing-heading">
+            <header class="newsletter-card__header">
+              <h2 id="closing-heading">Closing</h2>
+              <span class="badge">Generated by AI</span>
+            </header>
+            <div class="newsletter-card__body" contenteditable="true">
+              Thanks for keeping momentum high. Drop questions in the marketing channel and flag blockers early.
+            </div>
+            <footer class="newsletter-card__footer">
+              <button class="icon-button" type="button" aria-label="Copy section">
+                <span aria-hidden="true">📋</span>
+              </button>
+              <button class="icon-button" type="button" aria-label="Reset to AI suggestion">
+                <span aria-hidden="true">⟳</span>
+              </button>
+              <button class="icon-button icon-button--danger" type="button" aria-label="Delete section">
+                <span aria-hidden="true">🗑️</span>
+              </button>
+            </footer>
+          </article>
+
+          <section class="resources" aria-label="Resources">
+            <div class="resources__card">
+              <h3>Tips for better recaps</h3>
+              <ul>
+                <li>Keep meeting recordings under 60 minutes.</li>
+                <li>Include decisions and blockers in the recap input.</li>
+                <li>Highlight owner names for each action.</li>
+              </ul>
+            </div>
+            <div class="resources__card">
+              <h3>Recent templates</h3>
+              <ul>
+                <li>Leadership all-hands</li>
+                <li>Product launch digest</li>
+                <li>Customer spotlight</li>
+              </ul>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="command-bar" aria-label="Primary actions">
+        <button class="button button--ghost" type="button">Reset</button>
+        <button class="button button--outline" type="button">Preview Newsletter</button>
+        <button class="button" type="button">Generate Draft</button>
+      </nav>
+
+      <div class="toast toast--visible" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        Draft assembly in progress. We'll notify you when edits are ready.
+      </div>
+    </div>
+  </body>
+</html>
