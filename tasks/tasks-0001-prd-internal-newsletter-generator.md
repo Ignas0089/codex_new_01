@@ -27,7 +27,7 @@
 
 - [ ] 2.0 Implement audio and text summarization services
   - [x] 2.1 Build `audioSummarizer` to extract concise highlight snippets from the uploaded audio while respecting size limits and handling failure cases.
-  - [ ] 2.2 Create `transcriptSynthesizer` helpers that align transcript + written recap content, pulling out decisions, context, and action items.
+  - [x] 2.2 Create `transcriptSynthesizer` helpers that align transcript + written recap content, pulling out decisions, context, and action items.
   - [ ] 2.3 Write unit tests for both services to cover typical meetings, long transcripts, and invalid inputs.
 
 - [ ] 3.0 Assemble structured newsletter output

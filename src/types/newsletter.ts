@@ -80,6 +80,42 @@ export interface ActionItem {
   owner?: string;
   dueDate?: string; // ISO string
   status?: "pending" | "in_progress" | "completed";
+  source?: SynthesizedContentSource;
+}
+
+export type SynthesizedContentSource = "recap" | "transcript" | "both";
+
+export interface SynthesizedDecision {
+  id: string;
+  summary: string;
+  source: SynthesizedContentSource;
+  rationale?: string;
+  confidence?: number;
+  supportingEvidence?: string;
+}
+
+export interface SynthesizedInsight {
+  id: string;
+  summary: string;
+  source: SynthesizedContentSource;
+  quote?: string;
+  category?: string;
+}
+
+export interface TranscriptSynthesisMetadata {
+  usedRecap: boolean;
+  usedTranscript: boolean;
+  combinedCharacterCount: number;
+  truncatedInput?: boolean;
+  warnings?: string[];
+}
+
+export interface TranscriptSynthesisResult {
+  summary: string;
+  decisions: SynthesizedDecision[];
+  actionItems: ActionItem[];
+  insights: SynthesizedInsight[];
+  metadata: TranscriptSynthesisMetadata;
 }
 
 export interface NewsletterSection {
