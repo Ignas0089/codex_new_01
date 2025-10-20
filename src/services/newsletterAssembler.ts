@@ -1,5 +1,6 @@
 import {
   ActionItem,
+  ActionItemsSection,
   AudioHighlightsSummary,
   FreeformTopicSuggestion,
   MeetingAudioUpload,
@@ -108,10 +109,13 @@ const buildStructuredNewsletter = ({
     audioSummary,
     generateId,
   });
-  const actionItems = normalizeActionItems(transcriptSynthesis.actionItems);
+  const actionItems = buildActionItemsSection({
+    actionItems: transcriptSynthesis.actionItems,
+    generateId,
+  });
   const closing = buildClosingSection({
     transcriptSynthesis,
-    actionItemCount: actionItems.length,
+    actionItemCount: actionItems.items.length,
     audioSummary,
     generateId,
   });
@@ -324,15 +328,78 @@ const buildClosingSection = ({
   };
 };
 
+interface BuildActionItemsSectionArgs {
+  actionItems: ActionItem[];
+  generateId?: IdFactory;
+}
+
+const buildActionItemsSection = ({
+  actionItems,
+  generateId,
+}: BuildActionItemsSectionArgs): ActionItemsSection => {
+  const normalizedItems = normalizeActionItems(actionItems);
+
+  const lines = normalizedItems.map(formatActionItemLine);
+
+  const body = lines.length
+    ? lines.join("\n")
+    : "No action items were captured for this update. Check in with the team to confirm next steps.";
+
+  return {
+    id: generateId ? generateId() : "action-items",
+    title: "Action Items",
+    body,
+    items: normalizedItems,
+  };
+};
+
 const normalizeActionItems = (actionItems: ActionItem[]): ActionItem[] => {
   if (!actionItems?.length) {
     return [];
   }
 
-  return actionItems.map((item) => ({
-    ...item,
-    summary: item.summary.trim(),
-  }));
+  return actionItems.map((item, index) => {
+    const summary = item.summary?.trim();
+    const owner = item.owner?.trim();
+    const dueDate = item.dueDate?.trim();
+
+    return {
+      ...item,
+      summary: summary || `Follow up item ${index + 1}`,
+      ...(owner ? { owner } : {}),
+      ...(dueDate ? { dueDate } : {}),
+    };
+  });
+};
+
+const formatActionItemLine = (item: ActionItem): string => {
+  const details: string[] = [];
+
+  if (item.owner) {
+    details.push(`Owner: ${item.owner}`);
+  }
+
+  if (item.dueDate) {
+    details.push(`Due: ${formatDueDate(item.dueDate)}`);
+  }
+
+  const detailsSuffix = details.length ? ` — ${details.join(" | ")}` : "";
+
+  return `• ${item.summary}${detailsSuffix}`;
+};
+
+const formatDueDate = (isoDate: string): string => {
+  const parsed = new Date(isoDate);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return isoDate;
+  }
+
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
 interface BuildFreeformSuggestionArgs {

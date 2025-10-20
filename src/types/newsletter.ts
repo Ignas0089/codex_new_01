@@ -127,10 +127,14 @@ export interface NewsletterSection {
   highlights?: string[];
 }
 
+export interface ActionItemsSection extends NewsletterSection {
+  items: ActionItem[];
+}
+
 export interface StructuredNewsletter {
   introduction: NewsletterSection;
   mainUpdates: NewsletterSection[];
-  actionItems: ActionItem[];
+  actionItems: ActionItemsSection;
   closing: NewsletterSection;
   freeformTopic: FreeformTopicSuggestion;
 }
