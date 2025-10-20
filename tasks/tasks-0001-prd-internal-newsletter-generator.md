@@ -42,6 +42,6 @@
 
 - [ ] 5.0 Build the user interface for upload, preview, and editing
   - [x] 5.1 Create `NewsletterGeneratorPage` with inputs for audio upload, recap text, transcript text, and optional freeform topic prompt.
-  - [ ] 5.2 Add `NewsletterSectionEditor` components that display each generated section, allow inline edits, track unsaved changes, and offer copy-to-clipboard.
+  - [x] 5.2 Add `NewsletterSectionEditor` components that display each generated section, allow inline edits, track unsaved changes, and offer copy-to-clipboard.
   - [ ] 5.3 Connect the UI to the backend API, surface processing states/errors, and provide a final "Copy newsletter" control.
   - [ ] 5.4 Author integration/component tests to verify a successful generation flow and ensure validation errors appear as expected.
